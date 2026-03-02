@@ -87,7 +87,7 @@ To expose your scanner and fully manage it (Profile selection, DPI scaling, and 
 3. **Lovelace Card (UI):** Add a new "Manual" Dashboard Card in your Home Assistant dashboard and directly apply the data in the requested `ha_lovelace_card.yaml` to it.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/keserbaros1/smart-photo-archive-automation/main/assets/ha_dashboard.png" alt="Home Assistant Dashboard Preview" width="500">
+  <img src="https://raw.githubusercontent.com/keserbaros1/smart-photo-archive-automation/main/assets/ha_dashboard.jpg" alt="Home Assistant Dashboard Preview" width="500">
 </p>
 
 ---
