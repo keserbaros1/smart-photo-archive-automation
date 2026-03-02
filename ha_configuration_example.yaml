@@ -5,15 +5,9 @@ input_select:
   tarama_profili:
     name: Tarama Profili
     options:
-      - "1: A4 Tam Sayfa (4 Fotoğraf)"
-      - "2: A4 Yarım Sayfa Üst (2 Fotoğraf)"
-      - "3: Tekli 10x15 (Dikey)"
-      - "4: Tekli 15x10 (Yatay)"
-      - "5: Tekli 13x18 (Dikey)"
-      - "6: Tekli 18x13 (Yatay)"
-      - "7: Tekli 20x25 (Dikey)"
-      - "8: Vesikalık (4.5x6)"
-    initial: "1: A4 Tam Sayfa (4 Fotoğraf)"
+      - "1: Otomatik (Önizleme + Akıllı Kırpma)"
+      - "2: Özel Ölçü (Aşağıdan Girin)"
+    initial: "1: Otomatik (Önizleme + Akıllı Kırpma)"
     icon: mdi:crop
 
   tarama_dpi:
@@ -24,6 +18,25 @@ input_select:
       - "1200"
     initial: "1200"
     icon: mdi:quality-high
+
+input_number:
+  tarama_ozel_x:
+    name: Özel Genişlik (X) mm
+    min: 10
+    max: 215
+    step: 1
+    initial: 215
+    icon: mdi:arrow-left-right
+    mode: box
+
+  tarama_ozel_y:
+    name: Özel Yükseklik (Y) mm
+    min: 10
+    max: 297
+    step: 1
+    initial: 297
+    icon: mdi:arrow-up-down
+    mode: box
 
 command_line:
   - sensor:
@@ -42,4 +55,4 @@ shell_command:
 
   tara_ham: >
     ssh -i /config/ssh_key -o StrictHostKeyChecking=no {kullanici_adi}@{sunucu_adresi} \
-    "nohup bash /home/{kullanici_adi}/scan.sh {{ states('input_select.tarama_profili').split(':')[0] }} {{ states('input_select.tarama_dpi') }} > /dev/null 2>&1 &"
+    "nohup bash /home/{kullanici_adi}/scan.sh {{ states('input_select.tarama_profili').split(':')[0] }} {{ states('input_select.tarama_dpi') }} {{ states('input_number.tarama_ozel_x') | int }} {{ states('input_number.tarama_ozel_y') | int }} > /dev/null 2>&1 &"

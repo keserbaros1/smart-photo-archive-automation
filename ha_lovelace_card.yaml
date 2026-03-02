@@ -6,6 +6,10 @@ title: 🖨️ Gelişmiş Tarayıcı Kontrolü
 entities:
   - entity: input_select.tarama_profili
     name: Profil Seçimi
+  - entity: input_number.tarama_ozel_x
+    name: Özel Genişlik (X) mm
+  - entity: input_number.tarama_ozel_y
+    name: Özel Yükseklik (Y) mm
   - entity: input_select.tarama_dpi
     name: Çözünürlük (DPI)
   - entity: sensor.tarayici_durumu
