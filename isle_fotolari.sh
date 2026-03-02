@@ -310,6 +310,12 @@ for dosya in $(ls "$GIRIS_KLASOR"/scan_*.tiff 2>/dev/null | sort); do
             if [[ "$TASINSIN_MI" =~ ^[Ee]$ ]]; then
                 echo "   > 💾 Orijinal TIFF arşive kaldırılıyor..."
                 mv -f "$dosya" "$COP_KLASOR/"
+                
+                # Varsa JSON dosyasını da arşive taşı
+                JSON_DOSYA="${dosya%.tiff}.json"
+                if [ -f "$JSON_DOSYA" ]; then
+                    mv -f "$JSON_DOSYA" "$COP_KLASOR/"
+                fi
             fi
             echo "   ✅ İşlem Tamam!"
         else

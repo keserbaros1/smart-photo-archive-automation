@@ -1,19 +1,31 @@
 import cv2
 import sys
-import numpy as np
+import os
+import urllib.request
 from PIL import Image
 
-# OpenCV'nin hazır yüz tanıma modeli
-YUZ_MODELI = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+# Model dosyaları (Betik ile aynı klasöre indirilecek)
+MODEL_DIR = os.path.dirname(os.path.abspath(__file__))
+PROTOTXT = os.path.join(MODEL_DIR, "deploy.prototxt")
+MODEL = os.path.join(MODEL_DIR, "res10_300x300_ssd_iter_140000.caffemodel")
+
+def modelleri_indir():
+    if not os.path.exists(PROTOTXT):
+        print("   ⬇️ Yüz tanıma yapay zeka modeli indiriliyor (Prototxt)...")
+        urllib.request.urlretrieve("https://raw.githubusercontent.com/opencv/opencv/master/samples/dnn/face_detector/deploy.prototxt", PROTOTXT)
+    if not os.path.exists(MODEL):
+        print("   ⬇️ Yüz tanıma yapay zeka modeli indiriliyor (Caffemodel)...")
+        urllib.request.urlretrieve("https://raw.githubusercontent.com/opencv/opencv_3rdparty/dnn_samples_face_detector_20170830/res10_300x300_ssd_iter_140000.caffemodel", MODEL)
 
 def yuzu_bul_ve_dondur(resim_yolu):
-    # OpenCV ile okuma (Sadece analiz için, kaydederken Pillow kullanacağız ki renkler bozulmasın)
+    modelleri_indir()
+    
+    # DNN Modelini Yükle
+    net = cv2.dnn.readNetFromCaffe(PROTOTXT, MODEL)
+    
     cv_img = cv2.imread(resim_yolu)
     if cv_img is None: return
 
-    gray = cv2.cvtColor(cv_img, cv2.COLOR_BGR2GRAY)
-    
-    # 4 yönü test et (0, 90, 180, 270 derece saat yönü)
     yonler = [
         (0, None), 
         (270, cv2.ROTATE_90_CLOCKWISE), 
@@ -22,36 +34,30 @@ def yuzu_bul_ve_dondur(resim_yolu):
     ]
 
     en_iyi_aci = 0
-    en_buyuk_yuz_alani = 0
-
+    en_yuksek_guven = 0.0
 
     for aci, donusum in yonler:
-        test_img = gray
+        test_img = cv_img
         if donusum is not None:
-            test_img = cv2.rotate(gray, donusum)
+            test_img = cv2.rotate(cv_img, donusum)
         
-        # Yüz ara
-        yuzler = YUZ_MODELI.detectMultiScale(test_img, scaleFactor=1.1, minNeighbors=5, minSize=(100, 100))
+        # Resmi modele uygun hale getir
+        blob = cv2.dnn.blobFromImage(cv2.resize(test_img, (300, 300)), 1.0, (300, 300), (104.0, 177.0, 123.0))
+        net.setInput(blob)
+        detections = net.forward()
         
-	# Bulunan yüzlerin büyüklüğüne (alanına) bak
-        for (x, y, w, h) in yuzler:
-            alan = w * h
-            # Eğer bu yönde bulduğumuz yüz, diğer yönlerde bulduklarımızdan daha büyükse
-            # doğru açı budur diyoruz!
-            if alan > en_buyuk_yuz_alani:
-                en_buyuk_yuz_alani = alan
-                en_iyi_aci = aci
+        # Bulunan yüzlerin güvenilirlik oranına bak
+        for i in range(detections.shape[2]):
+            guven = detections[0, 0, i, 2]
+            if guven > 0.6: # %60'dan fazla eminse yüz kabul et
+                if guven > en_yuksek_guven:
+                    en_yuksek_guven = guven
+                    en_iyi_aci = aci
 
-
-
-    # Eğer döndürülmesi gerekiyorsa, işlemi Pillow ile yap (ICC Profilini korumak için)
-    if en_iyi_aci != 0 and en_buyuk_yuz_alani > 0:
-        print(f"   🔄 Yüz bulundu! {en_iyi_aci} derece döndürülüyor: {resim_yolu}")
+    if en_iyi_aci != 0 and en_yuksek_guven > 0.6:
+        print(f"   🔄 Yüz bulundu (%{int(en_yuksek_guven*100)} emin)! {en_iyi_aci} derece döndürülüyor: {os.path.basename(resim_yolu)}")
         pil_img = Image.open(resim_yolu)
         icc = pil_img.info.get('icc_profile')
-        
-        # Pillow'da yönler saat yönünün tersidir, o yüzden hesapladığımız açıyı direkt verebiliriz
-	# expand=True : Döndürürken köşelerin kesilmesini engeller
         pil_img = pil_img.rotate(en_iyi_aci, expand=True)
         pil_img.save(resim_yolu, 'PNG', icc_profile=icc)
 
