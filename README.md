@@ -1,93 +1,95 @@
-﻿# 📸 Akıllı Fotoğraf Tarama ve İşleme Otomasyonu (Smart Photo Scanner)
+﻿🇹🇷 [Türkçe dokümantasyon için tıklayın (Turkish Version)](README.tr.md)
 
-Bu proje, basılı eski fotoğraflarınızı en yüksek kalitede SANE (`scanimage`) ile yüksek çözünürlükte (RAW TIFF) taramak, **Yapay Zeka destekli otomatik kesme**, **yüz analizi ile otomatik döndürme**, ve yeni nesil formatlarda (AVIF/HEIC) kayıpsız olarak sıkıştırmak için tasarlanmış uçtan uca bir otomasyon sistemidir. 
+# 📸 Smart Photo Album Archive Automation
 
-Ayrıca tam entegre bir **Home Assistant** arayüzü ile fiziksel bir bilgisayar başına geçmeden tüm tarama süreçlerini doğrudan cep telefonunuz üzerinden yönetebilirsiniz.
+This project is an end-to-end automation system designed to scan your old printed photos at the highest quality (RAW TIFF) using SANE (`scanimage`), automatically crop them using **AI-powered boundary detection**, automatically correct their orientation using **face analysis**, and losslessly compress them into next-generation formats (AVIF/HEIC).
 
----
-
-## 🚀 Gelişmiş Özellikler
-
-- **🤖 Otomatik Sınır Algılama (Auto-Crop):** Tarayıcı önce tüm camı çok hızlı (75 DPI) ve düşük çözünürlükte tarar. Python (OpenCV) camdaki fotoğrafların yerini milimetrik olarak tespit eder ve **sadece fotoğrafların olduğu o alt bölgeleri** yüksek çözünürlükte (örn: 1200 DPI) tarayarak devasa zaman ve gereksiz disk boşa yazım tasarrufu sağlar.
-- **✂️ Dinamik Kesim (JSON Destekli):** Ayrı ayrı tespit edilen fotoğrafların koordinatları `.json` dosyasına şablon olarak yazılır. İşleme aşamasında devasa boyutlu asıl TIFF taraması bu koordinatlara göre, orijinal ICC renk profilleri ve DPI meta verisi %100 noktası noktasına korunarak parçalara ayrılır (Pillow kullanılarak).
-- **🔄 Yapay Zeka ile Yüz Yönü Bulma:** Ters veya yan taranmış fotoğraflar, *OpenCV Deep Neural Network (DNN) Caffe Modeli* (`res10_300...caffemodel`) sayesinde, içerisindeki yüzler yüksek keskinlikle analiz edilerek otomatik biçimde dikey boyuta döndürülür (~%60+ güvenilirlik seviyesi hesaplanarak).
-- **📦 Kayıpsız YeniNesil Sıkıştırma:** Fotoğraflarınız donanım kısıtlamalarını ve ekran kartı hatalarını (NVENC vs) aşarak maksimum arşiv kalitesi sunabilmesi için salt CPU tabanlı `avifenc` (AOM) veya `heif-enc` sıkıştırma işlemleriyle en verimli formatlara (AVIF / HEIC) dönüştürülür. Lossless (Kayıpsız) / Lossy (Kayıplı) ve özel sıkıştırma kodlama hızı seçenekleri ile özelleştirilebilir.
-- **🌐 Ağ (SMB/CIFS) Desteği:** İşlenecek dosyaları yerel Linux diski yerine ağınızdaki bir NAS cihazında veya paylaşım sunucusunda barındırıp doğrudan oradan çalıştırabilirsiniz. Betik, ağ sürücülerini otomatik "mount" bağlar ve işlem bittiğinde "unmount" ederek güvenle ayrılır.
+Furthermore, with its fully integrated **Home Assistant** interface, you can manage the entire scanning process directly from your mobile phone without ever needing to sit at a physical computer.
 
 ---
 
-## 📂 Dosya Yapısı ve Görevleri
+## 🚀 Advanced Features
 
-* `scan.sh`: Tarayıcınızı yöneten ana tetikleyici kabuk betiğidir. "Otomatik (Önizleme+Algılama)" veya "Özel Ölçü" (Örn: X/Genişlik:100 Y/Yükseklik:150 mm) modlarında çalışır.
-* `otomatik_sinir_bul.py`: `scan.sh` tarafından o anki hızlı önizleme dosyasını analiz etmek için arka planda çağrılır, asıl yüksek çözünürlük ile taranacak mm sınırlarını hesaplar ve parçalama .json kesim şablonunu oluşturur.
-* `isle_fotolari.sh`: Ham `tıff/json` blok dosyalarını topluca bulur, Python betik dizisini sırayla çalıştırır, alt klasöleri/çöp klasörleri oluşturur ve belirlediğiniz parametrelerde yüksek sıkıştırmayı yapar.
-* `sabit_kirp.py`: Ham TIFF dosyalarını hiçbir renk modülünü veya DPI miktarını bozmadan okur ve `.json` değerlerine bölümlerine göre ayırarak ana çıktıyı klasöre geçirir.
-* `yuz_dondur.py`: Parçalanmış ve oluşturulmuş son TIFF çıktılarındaki yüzleri AI/DNN Caffe ile tespit edip resmi hatasız izometrik bir şekliyle dikey açıya döndürür. (*Çevrimdışı çalışabilmek için gereken Caffe yapay zeka model dosyalarını ilk seferinde otomatik olarak internetten kurar*).
+- **🤖 Auto-Crop:** The scanner first performs a very fast (75 DPI), low-resolution scan of the entire glass. Python (OpenCV) detects the exact millimeter positions of the photos on the glass and scans **only those specific sub-regions** at high resolution (e.g., 1200 DPI). This saves a massive amount of time and prevents unnecessary HDD writes.
+- **✂️ Dynamic Cropping (JSON Supported):** The coordinates of the individually detected photos are written to a `.json` file as a template. During the processing phase, the massive original TIFF scan is split into pieces according to these coordinates, with the original ICC color profiles and DPI metadata preserved with 100% pixel-perfect accuracy (using Pillow).
+- **🔄 AI Face Orientation:** Inverse or sideways scanned photos are analyzed with high precision using the *OpenCV Deep Neural Network (DNN) Caffe Model* (`res10_300...caffemodel`). Faces within the photos are detected, and the image is automatically rotated to the correct vertical orientation (calculating a >60% confidence level).
+- **📦 Lossless Next-Gen Compression:** To bypass hardware constraints and GPU encoding errors (NVENC, etc.) and deliver maximum archival quality, your photos are converted to the most efficient formats (AVIF / HEIC) using pure CPU-based `avifenc` (AOM) or `heif-enc` compression. It is customizable with Lossless / Lossy and specific compression encoding speed options.
+- **🌐 Network (SMB/CIFS) Support:** You can host the files to be processed on a NAS device or shared server on your network instead of a local Linux disk and run them directly from there. The script automatically mounts network drives and safely unmounts them when the process is finished.
 
 ---
 
-## 🛠️ Kurulum ve Sistem Gereksinimleri
+## 📂 File Structure and Roles
 
-Proje Debian/Ubuntu tabanlı sistemlerde (Native Linux cihazlar veya WSL yapıları) sorunsuz çalışmak üzere tasarlanmıştır. 
-Kurucu betik olan (`isle_fotolari.sh`) ilk defa çalıştırıldığında gerekli olan ana bağımlılıkları kontrol der ve eksikleri otomatik olarak APT üstünden kurar. 
+* `scan.sh`: The main trigger shell script that manages your scanner. It operates in "Auto (Preview+Detect)" or "Custom Size" (E.g.: X/Width:100 Y/Height:150 mm) modes.
+* `otomatik_sinir_bul.py`: Called in the background by `scan.sh` to analyze the current fast preview file, calculates the mm boundaries to be scanned at the actual high resolution, and creates the `.json` slicing template.
+* `isle_fotolari.sh`: Collects all raw `tiff/json` block files, runs the Python script sequence in order, creates subfolders/trash folders, and performs high compression based on your specified parameters.
+* `sabit_kirp.py`: Reads raw TIFF files without destroying any color modules or DPI values, and extracts the main output to the folder by dividing them according to the `.json` value sections.
+* `yuz_dondur.py`: Detects faces in the fragmented and generated final TIFF outputs with AI/DNN Caffe and rotates the image to a perfectly vertical angle. *(It automatically downloads the necessary Caffe AI model files from the internet on the first run to work offline later).*
 
-Farklı konfigürasyonlarda manuel kurmak isterseniz:
+---
+
+## 🛠️ Installation and System Requirements
+
+The project is designed to run smoothly on Debian/Ubuntu-based systems (Native Linux distributions or WSL environments).
+When the installer script (`isle_fotolari.sh`) is run for the first time, it checks the main required dependencies and automatically installs any missing ones via APT.
+
+If you want to install them manually in different configurations:
 ```bash
 sudo apt-get update
 sudo apt-get install cifs-utils libavif-bin libheif-examples python3-opencv python3-pil
 ```
-*(Not: AI Yüz tanıma için gereken `.prototxt` ve `.caffemodel` uzantılı makine eğitim ağırlığı dosyaları sadece sisteme ihtiyaç duyulduğu safhada `yuz_dondur.py` modülü tarafından otomatik indirilip kullanılır.)*
+*(Note: The `.prototxt` and `.caffemodel` machine learning weight files required for AI Face recognition are automatically downloaded and used by the `yuz_dondur.py` module only when needed by the system).*
 
 ---
 
-## 💻 Sistem Kullanımı
+## 💻 System Usage
 
-### 1. Sisteme Fotoğraf Taratmak (`scan.sh`)
-Tarayıcınızın bağlı olduğu ana Linux terminalinde doğrudan şu tetikleyiciyi başlatın:
+### 1. Scanning Photos into the System (`scan.sh`)
+Run the following trigger directly in the main Linux terminal attached to your scanner:
 ```bash
 bash scan.sh
 ```
-Açılan menüde "**Otomatik**" seçeneğini belirlediğinizde, tarayıcı camına yan yana rastgele yerleştirdiğiniz bütün fotoğrafların konum sınırları yapay zeka ile tespit edilir, sadece o tespitli spesifik odaklar yüksek çözünürlükte taranır (Zaman kazanır) ve yanlarında o koordinatları barındıran tam uyumlu bir `.json` modülü dosyası ile ham çıktılar klasörüne `scan_X...` ön adıyla kaydedilir. 
-Menüden doğrudan özel milimetre boyutları seçerek kendi çizdiğiniz alanınız dahilinde sabit taranmasını sağlayabilirsiniz.
+When you select the "**Otomatik (Auto)**" option from the menu, the positional boundaries of all the photos you randomly placed side-by-side on the scanner glass are detected by AI. Only those specific detected focal points are scanned at high resolution (saving time), and they are saved in the raw output folder under the prefix `scan_X...` alongside a fully compatible `.json` module file containing those coordinates.
+You can also choose customized millimeter dimensions directly from the menu to ensure a fixed scan within your own drawn area.
 
-### 2. Taranmış Fotoğrafları Veri Olarak İşletmek (`isle_fotolari.sh`)
-Uzak klasörde yansıyan tüm ham `.tiff` ve `.json` ekili dosya kuyruğunu son kullanıcı bitmiş formatlarına (AI kesim, Caffe Yüz Döndürme vb.) çevirmek için betiği terminalde bir defa `sudo` yetkisiyle çağırın (*çıktı dosyalarının sistem izinleri sudo aşamasında kilitlenmeyecektir işlem yapan o kısımdaki doğal hesabınıza ait olacaktır*):
+### 2. Processing Scanned Photos as Data (`isle_fotolari.sh`)
+To convert the whole queue of raw `.tiff` and `.json` planted files mirrored in the remote folder into final end-user formats (AI cropping, Caffe Face Rotation, etc.), call the script once with `sudo` privileges in the terminal (*the system permissions of the output files will not be locked in the sudo phase, they will belong to your natural account that operates that part*):
 ```bash
 sudo bash isle_fotolari.sh
 ```
-Betik konsolu size interaktif adımlar halinde soracaktır: (Yerel ya da Ağ Dosyası yolu, tarih maskelemesi / seçimi, AVIF mi HEIC mi / Lossless / Sıkıştırma Motor Hızı) gibi filtrelerden geçer atamasını kendi üzerine kitler ve tam otomatik arka plan sürecinde fotoğrafları son haline getirir.
+The script console will ask you in interactive steps: (Local or Network File path, date masking/selection, AVIF or HEIC / Lossless / Compression Engine Speed). Once it passes through these filters, it locks its assignment and finalizes the photos in a fully automated background process.
 
 ---
 
-## 🏡 Akıllı Ev: Home Assistant Entegrasyonu
+## 🏡 Smart Home: Home Assistant Integration
 
-Tarayıcınızı dışa açarak Home Assistant üzerinden tam teşekküllü (Profil seçimi, DPI ölçeklendirmesi ve Özel Milimetrik X/Y değerlerini) yönetebilmek ve doğrudan uzaktan taramayı bir düğmeyle ev ağı içindeki her mecradan kontrol etmek için:
+To expose your scanner and fully manage it (Profile selection, DPI scaling, and Custom Millimetric X/Y values) via Home Assistant, completely controlling remote scanning via a button from anywhere within your home network:
 
-1. **Özel SSH Köprü Anahtarı:** Home Assistant'ın terminalinin sunucunuza sorunsuz/şifresiz iletişim geçiş paneli yapabilmesi için bir kimlik RSA anahtarı oluşturup yetkilendirin:
+1. **Custom SSH Bridge Key:** Create and authorize an identity RSA key so that the Home Assistant terminal can serve as a seamless/passwordless communication transition panel to your server:
    ```bash
-   # Home Assistant terminalinde çalıştırılacak kimlik komutu:
+   # Identity command to be run in the Home Assistant terminal:
    ssh-keygen -t rsa -b 4096 -f /config/ssh_key
-   ssh-copy-id -i /config/ssh_key kullanici_adi@sunucu_adresi
+   ssh-copy-id -i /config/ssh_key user_name@server_address
    ```
-2. **HA Konfigürasyon Dosyasına Geçiş (`configuration.yaml`):** Proje içeriğindeki `ha_configuration_example.yaml` taslağındaki şablon verisini Home Assistant'ınızın kendi `configuration.yaml` dosyasına yapıştırın. *(Shell/Sensor komutlarındaki kendi IP veya kullanıcı adı verinizi değiştirin)*
-3. **Lovelace Kartı (UI):** Home Assistant panonuzda yeni bir "Manuel (Manual)" Dashboard Kartı ekleyip projedeki `ha_lovelace_card.yaml` verisini doğrudan ona giydirin.
+2. **Transfer to HA Configuration File (`configuration.yaml`):** Paste the template data from the `ha_configuration_example.yaml` draft in the project content into your Home Assistant's own `configuration.yaml` file. *(Change the IP or user name data in the Shell/Sensor commands to your own).*
+3. **Lovelace Card (UI):** Add a new "Manual" Dashboard Card in your Home Assistant dashboard and directly apply the data in the requested `ha_lovelace_card.yaml` to it.
 
-Hayırlı olsun, bir fiziksel monitöre ve terminal yığınına gitmeksizin evinizin içerisindeki tüm cihazlarınız ile son derece güvenli şekilde tarama operasyonu kurabilirsiniz!
+Congratulations, you can set up a scanning operation extremely securely with all devices inside your house without physically going to a monitor or terminal stack!
 
 ---
 
-## 💡 Pratik İpuçları (Manuel Kesim Gerektiren Ağır İstisnai Durumlar)
+## 💡 Practical Tips (Heavy Exceptional Cases Requiring Manual Cropping)
 
-Basılı nesne yapay zeka sınırlarının çok silik olduğu (Tamamı solmuş/beyaz çıkmış arayüzeyler, çok aşırı yırtık kavisli nostaljik 1800'lerden kalma resimler) gibi AI sınır bulmasının şaştığı spesifik zor kısımlar manuel kurtarılmalıdır, ancak web tabanlı basit editörler (Photopea vb.) kesinlikle **KULLANILMAMALIDIR!** Bu uygulamalar projeyle kazandığınız 1200 DPI kalite / profesyonel `icc_profile` kalibrasyonunu çöpe atıp sıradan ekran resim formatına sıkıştırıp renk/boyut kalitesini ezerler.
+Specific difficult points where AI boundary finding gets confused, such as when printed object AI boundaries are very faint (fully faded/whitened interfaces, nostalgic 1800s pictures with heavily torn curved edges), must be recovered manually. However, simple web-based editors (Photopea, etc.) should **ABSOLUTELY NOT BE USED!** These applications throw away the 1200 DPI quality / professional `icc_profile` calibration you gained with the project, compress it into a standard screen image format, and crush the color/size quality.
 
-Windows üzerinden asıl renk/DPI datasını gram bozmadan orijinal `.tiff` dosyalarından parçalı kesim almanın en hatasız ve emniyetli yolu **IrfanView** masaüstü uygulamasını kullanmaktır:
+The most error-free and safest way to take cropped parts from original `.tiff` files without ruining the actual color/DPI data via Windows is to use the **IrfanView** desktop application:
 
-1. Ana dizinindeki devasa çözünürlüğe sahip asıl `*.tiff` orijinal resmini IrfanView ile içeriye alın.
-2. Kesilmesi gereken ana hedefin dış yüzeyinden farenin sol tuşunu kullanarak seçili bir çizgi kutuyu kement gibi yaratın (Seçimi oransal oynamak isterseniz **Shift + C** (Custom Selection) yapabilirsiniz.)
-3. Hemen **Ctrl + Y** *(Crop Selection / Seçileni kırp çıkar)* kısayolunu kullanın. Resmi ufaltmış olur.
-4. Çıktı için **S** tuşuyla "Farklı Kaydet" penceresine ulaşıp dosya alt tipinden uzantı listesini **TIFF** konumuna düzeltin.
-5. Sağ taraftaki beliren kaydetme yardımcı menüsündeki `"Save ICC Profile"` ve `"Keep original EXIF data"` kısımlarını onaylayıp tikleyin. ZIP ve LZW sıkıştırma sekmesinin (kayıpsızdır) işaretli olduğuna da özen gösterin.
-6. Seçili parçayı ayrı TIFF dosyası gibi diske bağımsız dışa yazdırın.
-7. Diğer eski nesneleri kesme adımına geçmek için **Ctrl + Z** tuşlarına basarak ana resme orijinal konuma dönün ve sıradakini kesin.
+1. Import the original `*.tiff` image with its massive resolution in your main directory via IrfanView.
+2. Create a selected bounding box like a lasso by using the left mouse button from the outer surface of the main target to be cut (If you want to adjust the proportional selection, you can press **Shift + C** (Custom Selection).)
+3. Immediately use the **Ctrl + Y** *(Crop Selection)* shortcut. This scales down the image.
+4. Reach the "Save As" window with the **S** key for output and correct the extension list from the file subtype to the **TIFF** position.
+5. In the pop-up saving assistant menu on the right, confirm and tick the `"Save ICC Profile"` and `"Keep original EXIF data"` options. Also, make sure that the ZIP and LZW compression tab (which is lossless) is checked.
+6. Export the selected part to disk independently as a separate TIFF file.
+7. To proceed to the step of cutting other old objects, press the **Ctrl + Z** keys to return to the original position on the main image and cut the next one.
 
-*(Cihaz bu sizin el yordamıyla böldüğünüz/ayıklattığınız tiff dosyası kısımlarını aynı şekilde anlayıp \`isle_fotolari.sh\` süreç panelinden kalite, düz rotasyon vb filtrelerle çalıştırıp olağan son AVIF/HEIC format çıktılarını vermeye otomatize biçimde devam edecektir.)*
+*(The machine will similarly understand these portions of tiff files you manually divided/extracted, process them through the \`isle_fotolari.sh\` process panel with filters such as quality, straight rotation, etc., and will continue natively to give the usual final AVIF/HEIC format outputs automatedly.)*
